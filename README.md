@@ -9,8 +9,34 @@ pip install -r requirements.txt
 python -m uvicorn main:app --reload --port 8010
 ```
 
-或直接執行 `run.bat`，然後開啟 http://127.0.0.1:8010 。
+或直接執行 `run.bat`，然後開啟 http://127.0.0.1:8010 。Linux 請見下方〈在 Linux 上執行〉。
 API 文件：http://127.0.0.1:8010/docs
+
+## 在 Linux 上執行
+
+```bash
+# 1. 取得程式（data/ 不在 GitHub 上，舊的專案資料要另外複製 data/ 資料夾過去）
+git clone https://github.com/xlcso852456/NO_CODE.git
+cd NO_CODE
+
+# 2. 建立虛擬環境並安裝套件（Ubuntu 23.04+ / Debian 12 不允許直接 pip install 到系統）
+sudo apt install python3-venv
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# 3. 啟動（會自動使用 .venv）
+./run.sh                  # 只有這台電腦能開網頁
+HOST=0.0.0.0 ./run.sh     # 其他電腦用 http://<這台IP>:8010 連線
+```
+
+注意事項：
+
+- 需要 Python 3.9 以上（建議 3.10+）。
+- **時區**：存檔時間與偵測時段以這台電腦的時區為準，請確認時區正確（`sudo timedatectl set-timezone Asia/Taipei`）。
+- 開放給其他電腦時，防火牆要開 8010 埠（例：`sudo ufw allow 8010/tcp`）。網頁沒有登入機制，只建議在內網使用。
+- 這台電腦要連得到攝影機的 RTSP 網路。
+- 若不是用 git clone、而是用隨身碟等方式複製，`.sh` 可能失去執行權限，先執行 `chmod +x run.sh test_rtsp/start_test_rtsp.sh`，或改用 `bash run.sh`。
+- 測試串流：下載 `mediamtx_v*_linux_amd64.tar.gz`（ARM 機器如 Jetson、樹莓派用 `linux_arm64`）解壓縮到 `test_rtsp/mediamtx/`，執行 `test_rtsp/start_test_rtsp.sh`。
 
 ## 操作
 
@@ -76,6 +102,28 @@ test_rtsp\start_test_rtsp.bat 影片.mp4      # 循環播放影片（也可把�
 | `equipment` | 要偵測的裝備 id（未選裝備偵測時為 `[]`） |
 
 舊版資料會在伺服器啟動時自動補齊：多選 `functions` 轉成 `function`；沒有 `scope` 的專案，有框選區域視為 `region`，否則視為 `global`。
+
+## 轉成 DataFrame
+
+[project_data.py](project_data.py) 把 `data/projects/*.json` 讀成 pandas DataFrame：
+
+```python
+from project_data import load_projects_df, load_regions_df
+
+projects = load_projects_df()   # 一個專案一列
+regions = load_regions_df()     # 一個框選區域一列，points 為 [[x, y], ...]
+
+fences = projects[projects.function == "fence"]
+for r in regions.itertuples():
+    print(r.project_name, r.region_name, r.points)
+```
+
+| DataFrame | 欄位 |
+|---|---|
+| `load_projects_df()` | `id`、`project_name`、`rtsp`、`function`、`function_name`、`scope`、`scope_name`、`region_count`、`regions`、`detection_start`、`detection_end`、`fence_enter_seconds`、`crowd_people`、`crowd_enter_seconds`、`equipment`、`equipment_names`、`image_path`、`created_at`、`updated_at` |
+| `load_regions_df()` | `project_id`、`project_name`、`rtsp`、`function`、`scope`、`region_index`、`region_name`、`point_count`、`points` |
+
+沒選到的功能參數為 `<NA>`。也可以直接執行：`python project_data.py` 預覽，`python project_data.py --csv` 另存成 `data/projects.csv`、`data/regions.csv`（Excel 可直接開，list 欄位存成 JSON 字串）。
 
 ## 裝備清單與圖片
 

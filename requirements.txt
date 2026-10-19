@@ -3,3 +3,4 @@ uvicorn[standard]>=0.29
 python-multipart>=0.0.9
 opencv-python-headless>=4.8
 imageio-ffmpeg>=0.5  # 只有 test_rtsp 本機測試串流需要
+pandas>=2.0  # project_data.py 轉 DataFrame 用

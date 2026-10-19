@@ -1,3 +1,5 @@
 * text=auto
 # Windows 批次檔必須是 CRLF 換行，否則 cmd 會解析錯誤
 *.bat text eol=crlf
+# Linux shell 腳本必須是 LF 換行，否則 bash 會出現 "\r: command not found" 錯誤
+*.sh text eol=lf

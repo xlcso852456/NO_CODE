@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional
+from urllib.parse import quote
 
 # RTSP 走 TCP 較不易因防火牆/NAT 掉封包而花屏，須在 import cv2 前設定
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
@@ -261,13 +262,19 @@ async def save_image(project_id: str, image: UploadFile) -> str:
     return filename
 
 
-def equipment_image(equipment_id: str) -> Optional[str]:
-    for ext in EQUIPMENT_IMAGE_EXTS:
-        path = EQUIPMENT_IMAGE_DIR / f"{equipment_id}{ext}"
-        if path.exists():
-            # 帶修改時間避免瀏覽器快取到舊圖
-            return f"/static/equipment/{path.name}?v={int(path.stat().st_mtime)}"
-    return None
+def equipment_images() -> dict[str, str]:
+    """裝備 id → 圖片網址；照片優先於預設 .svg。
+    檔名比對不分大小寫：Windows 本來就不分，Linux 有分，統一後 Helmet.PNG 在兩邊都找得到。"""
+    files = {p.name.lower(): p for p in EQUIPMENT_IMAGE_DIR.glob("*") if p.is_file()}
+    images = {}
+    for e in EQUIPMENT_OPTIONS:
+        for ext in EQUIPMENT_IMAGE_EXTS:
+            path = files.get(e["id"] + ext)
+            if path:
+                # 帶修改時間避免瀏覽器快取到舊圖
+                images[e["id"]] = f"/static/equipment/{quote(path.name)}?v={int(path.stat().st_mtime)}"
+                break
+    return images
 
 
 def now() -> str:
@@ -288,10 +295,11 @@ def index():
 
 @app.get("/api/options")
 def options():
+    images = equipment_images()
     return {
         "frame": {"width": FRAME_WIDTH, "height": FRAME_HEIGHT},
         "functions": [{"id": k, "name": v} for k, v in FUNCTIONS.items()],
-        "equipment": [{**e, "image": equipment_image(e["id"])} for e in EQUIPMENT_OPTIONS],
+        "equipment": [{**e, "image": images.get(e["id"])} for e in EQUIPMENT_OPTIONS],
     }
 
 

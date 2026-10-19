@@ -6,18 +6,30 @@
 串流網址：rtsp://127.0.0.1:8554/test，按 Ctrl+C 停止。
 """
 
+import os
+import shutil
 import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-import imageio_ffmpeg
-
 HERE = Path(__file__).resolve().parent
-MEDIAMTX = HERE / "mediamtx" / "mediamtx.exe"
+MEDIAMTX = HERE / "mediamtx" / ("mediamtx.exe" if os.name == "nt" else "mediamtx")
 CONFIG = HERE / "mediamtx_test.yml"
 URL = "rtsp://127.0.0.1:8554/test"
+
+
+def ffmpeg_exe() -> str:
+    """優先用 imageio-ffmpeg 內附的 FFmpeg，沒有的話改用系統安裝的 ffmpeg。"""
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except (ImportError, RuntimeError):
+        exe = shutil.which("ffmpeg")
+        if exe:
+            return exe
+    sys.exit("找不到 FFmpeg：請 pip install imageio-ffmpeg，或安裝系統的 ffmpeg（例：sudo apt install ffmpeg）")
 
 
 def wait_for_port(port: int, timeout: float = 10) -> bool:
@@ -44,16 +56,18 @@ def main() -> None:
     if not MEDIAMTX.exists():
         sys.exit(
             f"找不到 {MEDIAMTX}\n"
-            "請到 https://github.com/bluenviron/mediamtx/releases 下載 Windows 版"
-            "（mediamtx_v*_windows_amd64.zip），解壓縮到 test_rtsp/mediamtx/"
+            "請到 https://github.com/bluenviron/mediamtx/releases 下載對應版本，解壓縮到 test_rtsp/mediamtx/：\n"
+            "  Windows：mediamtx_v*_windows_amd64.zip\n"
+            "  Linux：mediamtx_v*_linux_amd64.tar.gz（ARM 機器如 Jetson、樹莓派用 linux_arm64）"
         )
+    ffmpeg = ffmpeg_exe()
     server = subprocess.Popen([str(MEDIAMTX), str(CONFIG)], cwd=MEDIAMTX.parent)
     try:
         if not wait_for_port(8554):
             sys.exit("MediaMTX 沒有啟動成功（8554 埠可能被占用）")
         print(f"\n測試串流：{URL}\n內容：{label}\n按 Ctrl+C 停止\n", flush=True)
         subprocess.run([
-            imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-loglevel", "error",
+            ffmpeg, "-hide_banner", "-loglevel", "error",
             *source,
             "-an", "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
             "-pix_fmt", "yuv420p", "-g", "15",

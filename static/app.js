@@ -129,7 +129,7 @@ function drawGlobal() {
   ctx.strokeRect(2, 2, W - 4, H - 4);
 
   const label = '全域偵測（整張畫面）';
-  ctx.font = '600 15px "Microsoft JhengHei", sans-serif';
+  ctx.font = '600 15px "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", sans-serif';
   const w = ctx.measureText(label).width + 20;
   ctx.fillStyle = hexAlpha(GLOBAL_COLOR, 0.9);
   ctx.fillRect(12, 12, w, 30);
@@ -154,7 +154,7 @@ function drawRegion(region, color, active) {
 
   const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
   const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-  ctx.font = '600 13px "Microsoft JhengHei", sans-serif';
+  ctx.font = '600 13px "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", sans-serif';
   const w = ctx.measureText(region.name).width + 12;
   ctx.fillStyle = hexAlpha(color, 0.9);
   ctx.fillRect(cx - w / 2, cy - 11, w, 22);
