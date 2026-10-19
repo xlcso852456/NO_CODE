@@ -1,0 +1,3 @@
+* text=auto
+# Windows 批次檔必須是 CRLF 換行，否則 cmd 會解析錯誤
+*.bat text eol=crlf
