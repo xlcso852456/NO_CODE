@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NO_CODE 偵測設定平台</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">NC</span>
+      <div>
+        <h1>NO_CODE 偵測設定平台</h1>
+        <p id="modeLabel">新增專案</p>
+      </div>
+    </div>
+    <button type="button" class="btn ghost-light" id="newProjectBtn">＋ 新增專案</button>
+  </header>
+
+  <main class="layout">
+    <!-- 左：畫面與框選 -->
+    <section class="card stage-card" id="stageCard">
+      <div class="source-bar">
+        <label for="rtsp">RTSP 網址 <em>*</em></label>
+        <div class="source-row">
+          <input type="text" id="rtsp" maxlength="500" placeholder="rtsp://帳號:密碼@192.168.1.10:554/stream1">
+          <button type="button" class="btn primary" id="grabBtn">讀取畫面</button>
+        </div>
+      </div>
+
+      <div class="scope-bar">
+        <span class="scope-label">偵測範圍</span>
+        <div class="segmented" role="radiogroup" aria-label="偵測範圍">
+          <label><input type="radio" name="scope" value="global" checked><span>全域</span></label>
+          <label><input type="radio" name="scope" value="region"><span>區域</span></label>
+        </div>
+        <small id="scopeHint"></small>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="btn" id="finishBtn" title="Enter">完成區域</button>
+        <button type="button" class="btn" id="undoBtn" title="Backspace / 右鍵">復原點</button>
+        <button type="button" class="btn" id="cancelBtn" title="Esc">取消繪製</button>
+        <button type="button" class="btn danger-outline" id="clearBtn">清除全部區域</button>
+        <span class="coord-readout" id="coordReadout">x: –, y: –</span>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="canvas" width="960" height="540"></canvas>
+        <div class="placeholder">
+          <strong>輸入 RTSP 網址後按「讀取畫面」</strong>
+          <span>伺服器會用 OpenCV 擷取一張畫面並縮放為 960 × 540，座標以此尺寸為準</span>
+        </div>
+        <div class="loading"><span class="spinner"></span>正在連線 RTSP 擷取畫面…</div>
+      </div>
+
+      <p class="hint">
+        點擊畫面新增頂點；點擊第一個點或按 <kbd>Enter</kbd> 完成區域。
+        <kbd>Backspace</kbd>／右鍵復原上一點，<kbd>Esc</kbd> 取消繪製。
+        完成後：拖曳<strong>區域內部</strong>可整塊移動，拖曳<strong>頂點</strong>可調整形狀。
+      </p>
+      <p class="image-info" id="imageInfo"></p>
+
+      <div class="section-head">
+        <h2>區域座標</h2>
+        <button type="button" class="btn small" id="copyBtn">複製座標</button>
+      </div>
+      <ul class="region-list" id="regionList"></ul>
+      <textarea id="coordsOutput" readonly rows="6" spellcheck="false"></textarea>
+    </section>
+
+    <!-- 右：專案設定 -->
+    <aside class="card form-card">
+      <form id="projectForm" novalidate>
+        <div class="field">
+          <label for="projectName">專案名稱 <em>*</em></label>
+          <input type="text" id="projectName" maxlength="100" placeholder="例：A 廠區入口">
+        </div>
+
+        <div class="field">
+          <label>偵測時段</label>
+          <div class="time-range">
+            <input type="time" id="timeStart" value="00:00">
+            <span>至</span>
+            <input type="time" id="timeEnd" value="23:59">
+          </div>
+          <small>結束早於開始代表跨夜（例：22:00 至 06:00）</small>
+        </div>
+
+        <fieldset class="field">
+          <legend>偵測功能 <em>*</em>（單選，取消勾選後才能改選其他）</legend>
+
+          <div class="func" data-func="fence">
+            <label class="func-head">
+              <input type="checkbox" name="function" value="fence">
+              <span>電子圍籬</span>
+            </label>
+            <div class="func-params">
+              <label>進入時間（秒）
+                <input type="number" id="fenceSeconds" min="0" max="86400" value="3">
+              </label>
+              <small>人員進入框選區域超過此秒數即觸發</small>
+            </div>
+          </div>
+
+          <div class="func" data-func="crowd">
+            <label class="func-head">
+              <input type="checkbox" name="function" value="crowd">
+              <span>群聚</span>
+            </label>
+            <div class="func-params two">
+              <label>群聚人數（人以上）
+                <input type="number" id="crowdPeople" min="2" max="1000" value="3">
+              </label>
+              <label>進入時間（秒）
+                <input type="number" id="crowdSeconds" min="0" max="86400" value="10">
+              </label>
+            </div>
+          </div>
+
+          <div class="func" data-func="fall">
+            <label class="func-head">
+              <input type="checkbox" name="function" value="fall">
+              <span>偵測昏倒</span>
+            </label>
+          </div>
+
+          <div class="func" data-func="equipment">
+            <label class="func-head">
+              <input type="checkbox" name="function" value="equipment">
+              <span>裝備偵測</span>
+            </label>
+            <div class="func-params">
+              <div class="chips" id="equipmentChips"></div>
+              <button type="button" class="btn small" id="openEquipmentBtn">選擇裝備…</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary block" id="saveBtn">儲存專案</button>
+        </div>
+      </form>
+    </aside>
+  </main>
+
+  <!-- 已儲存專案 -->
+  <section class="card list-card">
+    <div class="section-head">
+      <h2>已儲存專案</h2>
+      <button type="button" class="btn small" id="refreshBtn">重新整理</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>專案名稱</th>
+            <th>RTSP</th>
+            <th>功能</th>
+            <th>區域</th>
+            <th>偵測時段</th>
+            <th>更新時間</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="projectRows"></tbody>
+      </table>
+      <p class="empty" id="emptyProjects">尚無專案</p>
+    </div>
+  </section>
+
+  <!-- 裝備彈出視窗 -->
+  <dialog id="equipmentDialog">
+    <form method="dialog" class="dialog-body">
+      <div class="section-head">
+        <h2>選擇可偵測的裝備</h2>
+        <div class="row-gap">
+          <button type="button" class="btn small" id="equipAllBtn">全選</button>
+          <button type="button" class="btn small" id="equipNoneBtn">清除</button>
+        </div>
+      </div>
+      <div class="equip-grid" id="equipmentGrid"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="equipCancelBtn">取消</button>
+        <button type="button" class="btn primary" id="equipOkBtn">確定</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

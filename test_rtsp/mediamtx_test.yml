@@ -1,0 +1,13 @@
+# 本機測試用設定：只開 RTSP、只聽 127.0.0.1、只走 TCP（不會跳防火牆、不佔其他埠）
+logLevel: warn
+rtsp: true
+rtspTransports: [tcp]
+rtspAddress: 127.0.0.1:8554
+rtmp: false
+hls: false
+webrtc: false
+srt: false
+moq: false
+
+paths:
+  all_others:

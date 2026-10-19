@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <clipPath id="vest-body"><path d="M30 16 L37 16 L48 40 L59 16 L66 16 Q66 34 74 40 L74 80 L22 80 L22 40 Q30 34 30 16 Z"/></clipPath>
+  </defs>
+  <circle cx="48" cy="48" r="46" fill="#ffedd5"/>
+  <path d="M30 16 L37 16 L48 40 L59 16 L66 16 Q66 34 74 40 L74 80 L22 80 L22 40 Q30 34 30 16 Z" fill="#f97316"/>
+  <g clip-path="url(#vest-body)" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1.5">
+    <rect x="18" y="52" width="60" height="7"/>
+    <rect x="18" y="66" width="60" height="7"/>
+  </g>
+  <path d="M48 40 L48 80" stroke="#9a3412" stroke-width="2" stroke-dasharray="3 3"/>
+  <path d="M30 16 L37 16 L48 40 L59 16 L66 16 Q66 34 74 40 L74 80 L22 80 L22 40 Q30 34 30 16 Z" fill="none" stroke="#9a3412" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>
